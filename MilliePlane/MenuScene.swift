@@ -144,6 +144,14 @@ class MenuScene: SKScene {
     }
 
     private func setupCredits() {
+        let dedicationLabel = SKLabelNode(fontNamed: "AmericanTypewriter")
+        dedicationLabel.text = "Mille Plane is dedicated to the best niece ever... Millie Payne"
+        dedicationLabel.fontSize = 18
+        dedicationLabel.fontColor = SKColor(red: 1.0, green: 0.6, blue: 0.8, alpha: 1.0) // Pink
+        dedicationLabel.position = CGPoint(x: 0, y: -280)
+        dedicationLabel.zPosition = 10
+        addChild(dedicationLabel)
+
         let creditsLabel = SKLabelNode(fontNamed: "AmericanTypewriter")
         creditsLabel.text = "© 2024 MILLIE PLANE"
         creditsLabel.fontSize = 16

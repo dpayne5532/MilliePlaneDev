@@ -135,11 +135,10 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             
             
             DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-                if let scene = GameScene(fileNamed: "GameScene") {
-                    scene.scaleMode = .aspectFill
-                    
-                    self.view?.presentScene(scene)
-                }
+                let gameOverScene = GameOverScene(score: self.score)
+                gameOverScene.scaleMode = .aspectFill
+                let transition = SKTransition.fade(withDuration: 0.5)
+                self.view?.presentScene(gameOverScene, transition: transition)
             }
             
         } else if node.name == "score" {

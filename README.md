@@ -33,7 +33,7 @@
 **MilliePlane** is a Flappy Bird-inspired game where you pilot Millie's plane through obstacles while collecting Millie Bucks. Features a 1980s arcade-style interface with high score tracking, just like the classic arcade cabinets.
 
 <p align="center">
-  <img src="https://danpayne.co/static/media/mpgp.png" alt="MilliePlane Gameplay" width="600"/>
+  <img src="https://danpayne.co/mpgp.png" alt="MilliePlane Gameplay" width="600"/>
 </p>
 
 ---

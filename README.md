@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://danpayne.info/mp.png" alt="MilliePlane Logo" width="200"/>
+  <img src="https://danpayne.co/mp.png" alt="MilliePlane Logo" width="200"/>
 </p>
 
 <h1 align="center">MilliePlane</h1>
@@ -33,7 +33,7 @@
 **MilliePlane** is a Flappy Bird-inspired game where you pilot Millie's plane through obstacles while collecting Millie Bucks. Features a 1980s arcade-style interface with high score tracking, just like the classic arcade cabinets.
 
 <p align="center">
-  <img src="https://danpayne.info/static/media/milliePlane.f03e8a7996f1e07ecd57.png" alt="MilliePlane Gameplay" width="600"/>
+  <img src="https://danpayne.co/static/media/mpgp.png" alt="MilliePlane Gameplay" width="600"/>
 </p>
 
 ---

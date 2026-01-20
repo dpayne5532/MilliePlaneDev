@@ -10,6 +10,9 @@ import SpriteKit
 class GameOverScene: SKScene {
 
     private let finalScore: Int
+    private let isVictory: Bool
+    private let completionTime: TimeInterval?
+    private let gameMode: GameMode
     private var nameEntry: String = ""
     private var nameLabel: SKLabelNode?
     private var cursorNode: SKShapeNode?
@@ -22,13 +25,19 @@ class GameOverScene: SKScene {
     private var currentCharIndex = 0
     private var characterLabels: [SKLabelNode] = []
 
-    init(score: Int) {
+    init(score: Int, isVictory: Bool = false, completionTime: TimeInterval? = nil, gameMode: GameMode = .endless) {
         self.finalScore = score
+        self.isVictory = isVictory
+        self.completionTime = completionTime
+        self.gameMode = gameMode
         super.init(size: CGSize(width: 1024, height: 768))
     }
 
     required init?(coder aDecoder: NSCoder) {
         self.finalScore = 0
+        self.isVictory = false
+        self.completionTime = nil
+        self.gameMode = .endless
         super.init(coder: aDecoder)
     }
 
@@ -36,15 +45,54 @@ class GameOverScene: SKScene {
         backgroundColor = .black
         anchorPoint = CGPoint(x: 0.5, y: 0.5)
 
-        setupGameOver()
+        if isVictory {
+            setupVictory()
+        } else {
+            setupGameOver()
+        }
+
         setupScoreDisplay()
 
-        if HighScoreManager.shared.isHighScore(finalScore) {
+        // Determine if we should show name entry
+        let shouldEnterName: Bool
+        if isVictory && gameMode == .targetScore {
+            // For target score victory, check if it's a best time
+            shouldEnterName = HighScoreManager.shared.isTargetScoreRecord(completionTime ?? 0)
+        } else {
+            // For endless mode or game over, check if it's a high score
+            shouldEnterName = HighScoreManager.shared.isHighScore(finalScore)
+        }
+
+        if shouldEnterName {
             isEnteringName = true
             setupNameEntry()
         } else {
             setupHighScoresDisplay()
             setupContinuePrompt()
+        }
+    }
+
+    private func setupVictory() {
+        let victoryLabel = SKLabelNode(fontNamed: "AmericanTypewriter-Bold")
+        victoryLabel.text = "VICTORY!"
+        victoryLabel.fontSize = 64
+        victoryLabel.fontColor = SKColor(red: 0.0, green: 1.0, blue: 0.0, alpha: 1.0) // Green
+        victoryLabel.position = CGPoint(x: 0, y: 280)
+        victoryLabel.zPosition = 10
+        addChild(victoryLabel)
+
+        // Pulsing animation
+        let scaleUp = SKAction.scale(to: 1.1, duration: 0.5)
+        let scaleDown = SKAction.scale(to: 1.0, duration: 0.5)
+        let pulse = SKAction.sequence([scaleUp, scaleDown])
+        victoryLabel.run(SKAction.repeatForever(pulse))
+
+        // Add celebration particles
+        if let celebration = SKEmitterNode(fileNamed: "PlayerExplosion") {
+            celebration.position = CGPoint(x: 0, y: 280)
+            celebration.particleColor = SKColor(red: 1.0, green: 0.84, blue: 0.0, alpha: 1.0)
+            celebration.particleColorBlendFactor = 1.0
+            addChild(celebration)
         }
     }
 
@@ -66,7 +114,7 @@ class GameOverScene: SKScene {
 
     private func setupScoreDisplay() {
         let yourScoreLabel = SKLabelNode(fontNamed: "AmericanTypewriter")
-        yourScoreLabel.text = "YOUR SCORE"
+        yourScoreLabel.text = isVictory ? "FINAL SCORE" : "YOUR SCORE"
         yourScoreLabel.fontSize = 24
         yourScoreLabel.fontColor = SKColor(red: 0.0, green: 1.0, blue: 1.0, alpha: 1.0)
         yourScoreLabel.position = CGPoint(x: 0, y: 210)
@@ -81,7 +129,38 @@ class GameOverScene: SKScene {
         scoreValueLabel.zPosition = 10
         addChild(scoreValueLabel)
 
-        if HighScoreManager.shared.isHighScore(finalScore) {
+        // Show completion time for Target Score mode
+        if isVictory && gameMode == .targetScore, let time = completionTime {
+            let minutes = Int(time) / 60
+            let seconds = Int(time) % 60
+            let milliseconds = Int((time.truncatingRemainder(dividingBy: 1)) * 100)
+
+            let timeLabel = SKLabelNode(fontNamed: "AmericanTypewriter-Bold")
+            timeLabel.text = String(format: "TIME: %02d:%02d.%02d", minutes, seconds, milliseconds)
+            timeLabel.fontSize = 32
+            timeLabel.fontColor = SKColor(red: 1.0, green: 0.84, blue: 0.0, alpha: 1.0) // Gold
+            timeLabel.position = CGPoint(x: 0, y: 110)
+            timeLabel.zPosition = 10
+            addChild(timeLabel)
+
+            // Check if it's a new record
+            if HighScoreManager.shared.isTargetScoreRecord(time) {
+                let newRecordLabel = SKLabelNode(fontNamed: "AmericanTypewriter-Bold")
+                newRecordLabel.text = "NEW RECORD!"
+                newRecordLabel.fontSize = 28
+                newRecordLabel.fontColor = SKColor(red: 1.0, green: 0.2, blue: 0.2, alpha: 1.0)
+                newRecordLabel.position = CGPoint(x: 0, y: 70)
+                newRecordLabel.zPosition = 10
+                addChild(newRecordLabel)
+
+                // Flash animation
+                let flash = SKAction.sequence([
+                    SKAction.fadeAlpha(to: 0.3, duration: 0.3),
+                    SKAction.fadeAlpha(to: 1.0, duration: 0.3)
+                ])
+                newRecordLabel.run(SKAction.repeatForever(flash))
+            }
+        } else if HighScoreManager.shared.isHighScore(finalScore) {
             let newHighLabel = SKLabelNode(fontNamed: "AmericanTypewriter-Bold")
             newHighLabel.text = "NEW HIGH SCORE!"
             newHighLabel.fontSize = 28
@@ -198,46 +277,96 @@ class GameOverScene: SKScene {
 
     private func setupHighScoresDisplay() {
         let headerLabel = SKLabelNode(fontNamed: "AmericanTypewriter-Bold")
-        headerLabel.text = "HIGH SCORES"
-        headerLabel.fontSize = 28
-        headerLabel.fontColor = SKColor(red: 1.0, green: 0.2, blue: 0.2, alpha: 1.0)
-        headerLabel.position = CGPoint(x: 0, y: 50)
-        headerLabel.zPosition = 10
-        addChild(headerLabel)
 
-        let scores = HighScoreManager.shared.getHighScores()
-        let displayCount = min(5, scores.count)
+        // Show appropriate leaderboard based on game mode and victory
+        if isVictory && gameMode == .targetScore {
+            headerLabel.text = "BEST TIMES"
+            headerLabel.fontSize = 28
+            headerLabel.fontColor = SKColor(red: 1.0, green: 0.84, blue: 0.0, alpha: 1.0) // Gold
+            headerLabel.position = CGPoint(x: 0, y: 50)
+            headerLabel.zPosition = 10
+            addChild(headerLabel)
 
-        for i in 0..<displayCount {
-            let entry = scores[i]
-            let yPos = 10 - (i * 30)
+            let times = HighScoreManager.shared.getTargetScoreTimes()
+            let displayCount = min(5, times.count)
 
-            let rankLabel = SKLabelNode(fontNamed: "AmericanTypewriter-Bold")
-            rankLabel.text = "\(i + 1)."
-            rankLabel.fontSize = 20
-            rankLabel.fontColor = rankColor(for: i + 1)
-            rankLabel.horizontalAlignmentMode = .right
-            rankLabel.position = CGPoint(x: -150, y: yPos)
-            rankLabel.zPosition = 10
-            addChild(rankLabel)
+            for i in 0..<displayCount {
+                let entry = times[i]
+                let yPos = 10 - (i * 30)
 
-            let nameLabel = SKLabelNode(fontNamed: "AmericanTypewriter")
-            nameLabel.text = String(entry.name.prefix(10))
-            nameLabel.fontSize = 20
-            nameLabel.fontColor = .white
-            nameLabel.horizontalAlignmentMode = .left
-            nameLabel.position = CGPoint(x: -120, y: yPos)
-            nameLabel.zPosition = 10
-            addChild(nameLabel)
+                let rankLabel = SKLabelNode(fontNamed: "AmericanTypewriter-Bold")
+                rankLabel.text = "\(i + 1)."
+                rankLabel.fontSize = 20
+                rankLabel.fontColor = rankColor(for: i + 1)
+                rankLabel.horizontalAlignmentMode = .right
+                rankLabel.position = CGPoint(x: -150, y: yPos)
+                rankLabel.zPosition = 10
+                addChild(rankLabel)
 
-            let scoreLabel = SKLabelNode(fontNamed: "AmericanTypewriter-Bold")
-            scoreLabel.text = "$\(entry.score).00"
-            scoreLabel.fontSize = 20
-            scoreLabel.fontColor = SKColor(red: 0.0, green: 1.0, blue: 0.0, alpha: 1.0)
-            scoreLabel.horizontalAlignmentMode = .right
-            scoreLabel.position = CGPoint(x: 150, y: yPos)
-            scoreLabel.zPosition = 10
-            addChild(scoreLabel)
+                let nameLabel = SKLabelNode(fontNamed: "AmericanTypewriter")
+                nameLabel.text = String(entry.name.prefix(10))
+                nameLabel.fontSize = 20
+                nameLabel.fontColor = .white
+                nameLabel.horizontalAlignmentMode = .left
+                nameLabel.position = CGPoint(x: -120, y: yPos)
+                nameLabel.zPosition = 10
+                addChild(nameLabel)
+
+                let minutes = Int(entry.time) / 60
+                let seconds = Int(entry.time) % 60
+                let milliseconds = Int((entry.time.truncatingRemainder(dividingBy: 1)) * 100)
+
+                let timeLabel = SKLabelNode(fontNamed: "AmericanTypewriter-Bold")
+                timeLabel.text = String(format: "%02d:%02d.%02d", minutes, seconds, milliseconds)
+                timeLabel.fontSize = 20
+                timeLabel.fontColor = SKColor(red: 0.0, green: 1.0, blue: 0.0, alpha: 1.0)
+                timeLabel.horizontalAlignmentMode = .right
+                timeLabel.position = CGPoint(x: 150, y: yPos)
+                timeLabel.zPosition = 10
+                addChild(timeLabel)
+            }
+        } else {
+            headerLabel.text = "HIGH SCORES"
+            headerLabel.fontSize = 28
+            headerLabel.fontColor = SKColor(red: 1.0, green: 0.2, blue: 0.2, alpha: 1.0)
+            headerLabel.position = CGPoint(x: 0, y: 50)
+            headerLabel.zPosition = 10
+            addChild(headerLabel)
+
+            let scores = HighScoreManager.shared.getHighScores()
+            let displayCount = min(5, scores.count)
+
+            for i in 0..<displayCount {
+                let entry = scores[i]
+                let yPos = 10 - (i * 30)
+
+                let rankLabel = SKLabelNode(fontNamed: "AmericanTypewriter-Bold")
+                rankLabel.text = "\(i + 1)."
+                rankLabel.fontSize = 20
+                rankLabel.fontColor = rankColor(for: i + 1)
+                rankLabel.horizontalAlignmentMode = .right
+                rankLabel.position = CGPoint(x: -150, y: yPos)
+                rankLabel.zPosition = 10
+                addChild(rankLabel)
+
+                let nameLabel = SKLabelNode(fontNamed: "AmericanTypewriter")
+                nameLabel.text = String(entry.name.prefix(10))
+                nameLabel.fontSize = 20
+                nameLabel.fontColor = .white
+                nameLabel.horizontalAlignmentMode = .left
+                nameLabel.position = CGPoint(x: -120, y: yPos)
+                nameLabel.zPosition = 10
+                addChild(nameLabel)
+
+                let scoreLabel = SKLabelNode(fontNamed: "AmericanTypewriter-Bold")
+                scoreLabel.text = "$\(entry.score).00"
+                scoreLabel.fontSize = 20
+                scoreLabel.fontColor = SKColor(red: 0.0, green: 1.0, blue: 0.0, alpha: 1.0)
+                scoreLabel.horizontalAlignmentMode = .right
+                scoreLabel.position = CGPoint(x: 150, y: yPos)
+                scoreLabel.zPosition = 10
+                addChild(scoreLabel)
+            }
         }
     }
 
@@ -341,14 +470,24 @@ class GameOverScene: SKScene {
         hasSubmittedScore = true
 
         let name = nameEntry.isEmpty ? "AAA" : nameEntry
-        HighScoreManager.shared.addScore(name: name, score: finalScore)
+
+        // Submit appropriate score type
+        if isVictory && gameMode == .targetScore, let time = completionTime {
+            HighScoreManager.shared.addTargetScoreTime(name: name, time: time)
+        } else {
+            HighScoreManager.shared.addScore(name: name, score: finalScore)
+        }
 
         // Remove name entry UI
         isEnteringName = false
         removeAllChildren()
 
         backgroundColor = .black
-        setupGameOver()
+        if isVictory {
+            setupVictory()
+        } else {
+            setupGameOver()
+        }
         setupScoreDisplay()
         setupHighScoresDisplay()
         setupContinuePrompt()

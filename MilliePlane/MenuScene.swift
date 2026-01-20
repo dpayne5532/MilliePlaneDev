@@ -2,7 +2,7 @@
 //  MenuScene.swift
 //  MilliePlane
 //
-//  1980s arcade-style start screen
+//  1980s arcade-style start screen with game mode selection
 //
 
 import SpriteKit
@@ -11,13 +11,14 @@ class MenuScene: SKScene {
 
     private var blinkAction: SKAction!
     private var highScoreNodes: [SKNode] = []
+    private var selectedMode: GameMode = .endless
 
     override func didMove(to view: SKView) {
         backgroundColor = .black
 
         setupTitle()
         setupHighScores()
-        setupStartPrompt()
+        setupModeSelection()
         setupCredits()
         setupDecorations()
     }
@@ -126,21 +127,89 @@ class MenuScene: SKScene {
         }
     }
 
-    private func setupStartPrompt() {
-        let startLabel = SKLabelNode(fontNamed: "AmericanTypewriter-Bold")
-        startLabel.text = "TAP ANYWHERE TO START"
-        startLabel.fontSize = 28
-        startLabel.fontColor = .white
-        startLabel.position = CGPoint(x: 0, y: -120)
-        startLabel.zPosition = 10
-        startLabel.name = "startPrompt"
-        addChild(startLabel)
+    private func setupModeSelection() {
+        // Mode selection header
+        let selectLabel = SKLabelNode(fontNamed: "AmericanTypewriter")
+        selectLabel.text = "SELECT MODE"
+        selectLabel.fontSize = 24
+        selectLabel.fontColor = SKColor(red: 0.8, green: 0.8, blue: 0.8, alpha: 1.0)
+        selectLabel.position = CGPoint(x: 0, y: -100)
+        selectLabel.zPosition = 10
+        addChild(selectLabel)
+
+        // Endless Mode Button
+        let endlessButton = createModeButton(
+            mode: .endless,
+            position: CGPoint(x: -150, y: -160),
+            name: "endlessButton"
+        )
+        addChild(endlessButton)
+
+        // Target Score Button
+        let targetButton = createModeButton(
+            mode: .targetScore,
+            position: CGPoint(x: 150, y: -160),
+            name: "targetButton"
+        )
+        addChild(targetButton)
+
+        // Instructions
+        let instructionLabel = SKLabelNode(fontNamed: "AmericanTypewriter")
+        instructionLabel.text = "TAP A MODE TO START"
+        instructionLabel.fontSize = 20
+        instructionLabel.fontColor = .white
+        instructionLabel.position = CGPoint(x: 0, y: -230)
+        instructionLabel.zPosition = 10
+        instructionLabel.name = "startPrompt"
+        addChild(instructionLabel)
 
         // Blinking animation
         let fadeOut = SKAction.fadeAlpha(to: 0.2, duration: 0.5)
         let fadeIn = SKAction.fadeAlpha(to: 1.0, duration: 0.5)
         let blink = SKAction.sequence([fadeOut, fadeIn])
-        startLabel.run(SKAction.repeatForever(blink))
+        instructionLabel.run(SKAction.repeatForever(blink))
+    }
+
+    private func createModeButton(mode: GameMode, position: CGPoint, name: String) -> SKNode {
+        let container = SKNode()
+        container.position = position
+        container.name = name
+
+        // Button background
+        let background = SKShapeNode(rectOf: CGSize(width: 200, height: 80), cornerRadius: 10)
+        background.fillColor = mode == .endless ?
+            SKColor(red: 0.0, green: 0.4, blue: 0.8, alpha: 1.0) :  // Blue for endless
+            SKColor(red: 0.0, green: 0.6, blue: 0.3, alpha: 1.0)    // Green for target
+        background.strokeColor = .white
+        background.lineWidth = 3
+        background.glowWidth = 2
+        container.addChild(background)
+
+        // Mode name
+        let titleLabel = SKLabelNode(fontNamed: "AmericanTypewriter-Bold")
+        titleLabel.text = mode.displayName
+        titleLabel.fontSize = 18
+        titleLabel.fontColor = .white
+        titleLabel.position = CGPoint(x: 0, y: 10)
+        titleLabel.verticalAlignmentMode = .center
+        container.addChild(titleLabel)
+
+        // Mode description
+        let descLabel = SKLabelNode(fontNamed: "AmericanTypewriter")
+        descLabel.text = mode.description
+        descLabel.fontSize = 14
+        descLabel.fontColor = SKColor(red: 0.8, green: 0.8, blue: 0.8, alpha: 1.0)
+        descLabel.position = CGPoint(x: 0, y: -15)
+        descLabel.verticalAlignmentMode = .center
+        container.addChild(descLabel)
+
+        // Pulsing animation
+        let scaleUp = SKAction.scale(to: 1.05, duration: 0.8)
+        let scaleDown = SKAction.scale(to: 1.0, duration: 0.8)
+        let pulse = SKAction.sequence([scaleUp, scaleDown])
+        container.run(SKAction.repeatForever(pulse))
+
+        return container
     }
 
     private func setupCredits() {
@@ -203,14 +272,25 @@ class MenuScene: SKScene {
     }
 
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
-        startGame()
+        guard let touch = touches.first else { return }
+        let location = touch.location(in: self)
+        let nodes = nodes(at: location)
+
+        for node in nodes {
+            if node.name == "endlessButton" || node.parent?.name == "endlessButton" {
+                startGame(mode: .endless)
+                return
+            } else if node.name == "targetButton" || node.parent?.name == "targetButton" {
+                startGame(mode: .targetScore)
+                return
+            }
+        }
     }
 
-    private func startGame() {
-        if let scene = GameScene(fileNamed: "GameScene") {
-            scene.scaleMode = .aspectFill
-            let transition = SKTransition.fade(withDuration: 0.5)
-            view?.presentScene(scene, transition: transition)
-        }
+    private func startGame(mode: GameMode) {
+        let scene = GameScene(gameMode: mode)
+        scene.scaleMode = .aspectFill
+        let transition = SKTransition.fade(withDuration: 0.5)
+        view?.presentScene(scene, transition: transition)
     }
 }

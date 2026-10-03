@@ -19,18 +19,18 @@ enum GoldenHeart {
         return Double.random(in: 0..<1) < spawnChance
     }
 
-    static func createNode() -> SKNode {
+    static func createNode(scale: CGFloat = 1) -> SKNode {
         let container = SKNode()
         container.name = nodeName
 
-        let heart = SKShapeNode(path: heartPath(size: 26))
+        let heart = SKShapeNode(path: heartPath(size: 26 * scale))
         heart.fillColor = gold
         heart.strokeColor = .white
         heart.lineWidth = 3
         heart.glowWidth = 8
         container.addChild(heart)
 
-        let physicsBody = SKPhysicsBody(circleOfRadius: 24)
+        let physicsBody = SKPhysicsBody(circleOfRadius: 24 * scale)
         physicsBody.isDynamic = false
         physicsBody.contactTestBitMask = 1
         container.physicsBody = physicsBody

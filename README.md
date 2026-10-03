@@ -5,7 +5,7 @@
 <h1 align="center">MilliePlane</h1>
 
 <p align="center">
-  <strong>A retro arcade-style endless flyer for iPad</strong>
+  <strong>A retro arcade-style endless flyer for iPhone &amp; iPad</strong>
 </p>
 
 <p align="center">
@@ -15,7 +15,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Platform-iPadOS%2015.0+-lightgrey?style=flat-square&logo=apple" alt="Platform"/>
+  <img src="https://img.shields.io/badge/Platform-iOS%20%7C%20iPadOS%2015.0+-lightgrey?style=flat-square&logo=apple" alt="Platform"/>
   <img src="https://img.shields.io/badge/Swift-5.0-orange?style=flat-square&logo=swift" alt="Swift"/>
   <img src="https://img.shields.io/badge/Framework-SpriteKit-green?style=flat-square" alt="SpriteKit"/>
 </p>
@@ -78,7 +78,7 @@
   <img src="https://img.shields.io/badge/Download_on-TestFlight-blue?style=for-the-badge&logo=apple" alt="TestFlight"/>
 </a>
 
-Install directly on your iPad using Apple's TestFlight Beta platform.
+Install directly on your iPhone or iPad using Apple's TestFlight Beta platform.
 
 ### Option 2: Build from Source
 
@@ -91,7 +91,7 @@ cd MilliePlaneDev
 open MilliePlane.xcodeproj
 ```
 
-Then select your iPad device/simulator and press **⌘R** to build and run.
+Then select an iPhone or iPad device/simulator and press **⌘R** to build and run.
 
 ---
 
@@ -109,6 +109,8 @@ MilliePlane/
 ├── PowerUp.swift            # Shield, magnet & multiplier
 ├── GoldenHeart.swift        # Golden hearts from Grandma Karen
 ├── GameSettings.swift       # Music & sound preferences
+├── SceneLayout.swift        # Fits scenes to iPhone & iPad screens
+├── SceneDelegate.swift      # UIKit scene life cycle
 ├── GameScene.sks            # SpriteKit scene file
 ├── PlayerExplosion.sks      # Explosion particle effect
 └── Assets.xcassets/         # Images & app icons
@@ -118,7 +120,7 @@ MilliePlane/
 
 ## Requirements
 
-- iPadOS 15.0+
+- iOS / iPadOS 15.0+
 - Xcode 26.0+ (for building from source)
 
 ---

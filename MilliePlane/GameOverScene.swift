@@ -25,6 +25,9 @@ class GameOverScene: SKScene {
     private var currentCharIndex = 0
     private var characterLabels: [SKLabelNode] = []
 
+    /// Holds everything on screen; scaled down to fit shorter iPhone screens
+    private let content = SKNode()
+
     init(score: Int, isVictory: Bool = false, completionTime: TimeInterval? = nil, gameMode: GameMode = .endless) {
         self.finalScore = score
         self.isVictory = isVictory
@@ -44,6 +47,12 @@ class GameOverScene: SKScene {
     override func didMove(to view: SKView) {
         backgroundColor = .black
         anchorPoint = CGPoint(x: 0.5, y: 0.5)
+
+        // The layout spans roughly y = -210...335; shrink and recenter it when the screen is shorter
+        let fitScale = min(1, size.height / 600)
+        content.setScale(fitScale)
+        content.position.y = fitScale < 1 ? -62 * fitScale : 0
+        addChild(content)
 
         if isVictory {
             setupVictory()
@@ -79,7 +88,7 @@ class GameOverScene: SKScene {
         victoryLabel.fontColor = SKColor(red: 0.0, green: 1.0, blue: 0.0, alpha: 1.0) // Green
         victoryLabel.position = CGPoint(x: 0, y: 280)
         victoryLabel.zPosition = 10
-        addChild(victoryLabel)
+        content.addChild(victoryLabel)
 
         // Pulsing animation
         let scaleUp = SKAction.scale(to: 1.1, duration: 0.5)
@@ -92,7 +101,7 @@ class GameOverScene: SKScene {
             celebration.position = CGPoint(x: 0, y: 280)
             celebration.particleColor = SKColor(red: 1.0, green: 0.84, blue: 0.0, alpha: 1.0)
             celebration.particleColorBlendFactor = 1.0
-            addChild(celebration)
+            content.addChild(celebration)
         }
     }
 
@@ -103,7 +112,7 @@ class GameOverScene: SKScene {
         gameOverLabel.fontColor = SKColor(red: 1.0, green: 0.2, blue: 0.2, alpha: 1.0)
         gameOverLabel.position = CGPoint(x: 0, y: 280)
         gameOverLabel.zPosition = 10
-        addChild(gameOverLabel)
+        content.addChild(gameOverLabel)
 
         // Pulsing animation
         let scaleUp = SKAction.scale(to: 1.1, duration: 0.5)
@@ -119,7 +128,7 @@ class GameOverScene: SKScene {
         yourScoreLabel.fontColor = SKColor(red: 0.0, green: 1.0, blue: 1.0, alpha: 1.0)
         yourScoreLabel.position = CGPoint(x: 0, y: 210)
         yourScoreLabel.zPosition = 10
-        addChild(yourScoreLabel)
+        content.addChild(yourScoreLabel)
 
         let scoreValueLabel = SKLabelNode(fontNamed: "AmericanTypewriter-Bold")
         scoreValueLabel.text = "$\(finalScore).00"
@@ -127,7 +136,7 @@ class GameOverScene: SKScene {
         scoreValueLabel.fontColor = SKColor(red: 0.0, green: 1.0, blue: 0.0, alpha: 1.0)
         scoreValueLabel.position = CGPoint(x: 0, y: 160)
         scoreValueLabel.zPosition = 10
-        addChild(scoreValueLabel)
+        content.addChild(scoreValueLabel)
 
         // Show completion time for Target Score mode
         if isVictory && gameMode == .targetScore, let time = completionTime {
@@ -141,7 +150,7 @@ class GameOverScene: SKScene {
             timeLabel.fontColor = SKColor(red: 1.0, green: 0.84, blue: 0.0, alpha: 1.0) // Gold
             timeLabel.position = CGPoint(x: 0, y: 110)
             timeLabel.zPosition = 10
-            addChild(timeLabel)
+            content.addChild(timeLabel)
 
             // Check if it's a new record
             if HighScoreManager.shared.isTargetScoreRecord(time) {
@@ -151,7 +160,7 @@ class GameOverScene: SKScene {
                 newRecordLabel.fontColor = SKColor(red: 1.0, green: 0.2, blue: 0.2, alpha: 1.0)
                 newRecordLabel.position = CGPoint(x: 0, y: 70)
                 newRecordLabel.zPosition = 10
-                addChild(newRecordLabel)
+                content.addChild(newRecordLabel)
 
                 // Flash animation
                 let flash = SKAction.sequence([
@@ -167,7 +176,7 @@ class GameOverScene: SKScene {
             newHighLabel.fontColor = SKColor(red: 1.0, green: 0.84, blue: 0.0, alpha: 1.0)
             newHighLabel.position = CGPoint(x: 0, y: 110)
             newHighLabel.zPosition = 10
-            addChild(newHighLabel)
+            content.addChild(newHighLabel)
 
             // Flash animation
             let flash = SKAction.sequence([
@@ -185,7 +194,7 @@ class GameOverScene: SKScene {
         enterNameLabel.fontColor = .white
         enterNameLabel.position = CGPoint(x: 0, y: 50)
         enterNameLabel.zPosition = 10
-        addChild(enterNameLabel)
+        content.addChild(enterNameLabel)
 
         // Name display with underscores
         nameLabel = SKLabelNode(fontNamed: "AmericanTypewriter-Bold")
@@ -194,7 +203,7 @@ class GameOverScene: SKScene {
         nameLabel?.fontColor = SKColor(red: 1.0, green: 0.8, blue: 0.0, alpha: 1.0)
         nameLabel?.position = CGPoint(x: 0, y: 0)
         nameLabel?.zPosition = 10
-        addChild(nameLabel!)
+        content.addChild(nameLabel!)
 
         // Character selector
         setupCharacterSelector()
@@ -206,7 +215,7 @@ class GameOverScene: SKScene {
         instructionLabel.fontColor = SKColor(red: 0.5, green: 0.5, blue: 0.5, alpha: 1.0)
         instructionLabel.position = CGPoint(x: 0, y: -150)
         instructionLabel.zPosition = 10
-        addChild(instructionLabel)
+        content.addChild(instructionLabel)
 
         let doneLabel = SKLabelNode(fontNamed: "AmericanTypewriter-Bold")
         doneLabel.text = "TAP HERE WHEN DONE"
@@ -215,7 +224,7 @@ class GameOverScene: SKScene {
         doneLabel.position = CGPoint(x: 0, y: -200)
         doneLabel.zPosition = 10
         doneLabel.name = "doneButton"
-        addChild(doneLabel)
+        content.addChild(doneLabel)
 
         // Blink done button
         let blink = SKAction.sequence([
@@ -229,10 +238,10 @@ class GameOverScene: SKScene {
         backspaceLabel.text = "[DEL]"
         backspaceLabel.fontSize = 24
         backspaceLabel.fontColor = SKColor(red: 1.0, green: 0.5, blue: 0.5, alpha: 1.0)
-        backspaceLabel.position = CGPoint(x: 200, y: -60)
+        backspaceLabel.position = CGPoint(x: 240, y: -60)
         backspaceLabel.zPosition = 10
         backspaceLabel.name = "backspace"
-        addChild(backspaceLabel)
+        content.addChild(backspaceLabel)
     }
 
     private func setupCharacterSelector() {
@@ -244,7 +253,7 @@ class GameOverScene: SKScene {
         leftArrow.position = CGPoint(x: -150, y: -60)
         leftArrow.zPosition = 10
         leftArrow.name = "leftArrow"
-        addChild(leftArrow)
+        content.addChild(leftArrow)
 
         // Current character
         let charLabel = SKLabelNode(fontNamed: "AmericanTypewriter-Bold")
@@ -254,7 +263,7 @@ class GameOverScene: SKScene {
         charLabel.position = CGPoint(x: 0, y: -60)
         charLabel.zPosition = 10
         charLabel.name = "currentChar"
-        addChild(charLabel)
+        content.addChild(charLabel)
         characterLabels.append(charLabel)
 
         // Right arrow
@@ -265,7 +274,7 @@ class GameOverScene: SKScene {
         rightArrow.position = CGPoint(x: 150, y: -60)
         rightArrow.zPosition = 10
         rightArrow.name = "rightArrow"
-        addChild(rightArrow)
+        content.addChild(rightArrow)
     }
 
     private func updateNameDisplay() {
@@ -285,7 +294,7 @@ class GameOverScene: SKScene {
             headerLabel.fontColor = SKColor(red: 1.0, green: 0.84, blue: 0.0, alpha: 1.0) // Gold
             headerLabel.position = CGPoint(x: 0, y: 50)
             headerLabel.zPosition = 10
-            addChild(headerLabel)
+            content.addChild(headerLabel)
 
             let times = HighScoreManager.shared.getTargetScoreTimes()
             let displayCount = min(5, times.count)
@@ -301,7 +310,7 @@ class GameOverScene: SKScene {
                 rankLabel.horizontalAlignmentMode = .right
                 rankLabel.position = CGPoint(x: -150, y: yPos)
                 rankLabel.zPosition = 10
-                addChild(rankLabel)
+                content.addChild(rankLabel)
 
                 let nameLabel = SKLabelNode(fontNamed: "AmericanTypewriter")
                 nameLabel.text = String(entry.name.prefix(10))
@@ -310,7 +319,7 @@ class GameOverScene: SKScene {
                 nameLabel.horizontalAlignmentMode = .left
                 nameLabel.position = CGPoint(x: -120, y: yPos)
                 nameLabel.zPosition = 10
-                addChild(nameLabel)
+                content.addChild(nameLabel)
 
                 let minutes = Int(entry.time) / 60
                 let seconds = Int(entry.time) % 60
@@ -323,7 +332,7 @@ class GameOverScene: SKScene {
                 timeLabel.horizontalAlignmentMode = .right
                 timeLabel.position = CGPoint(x: 150, y: yPos)
                 timeLabel.zPosition = 10
-                addChild(timeLabel)
+                content.addChild(timeLabel)
             }
         } else {
             headerLabel.text = "HIGH SCORES"
@@ -331,7 +340,7 @@ class GameOverScene: SKScene {
             headerLabel.fontColor = SKColor(red: 1.0, green: 0.2, blue: 0.2, alpha: 1.0)
             headerLabel.position = CGPoint(x: 0, y: 50)
             headerLabel.zPosition = 10
-            addChild(headerLabel)
+            content.addChild(headerLabel)
 
             let scores = HighScoreManager.shared.getHighScores()
             let displayCount = min(5, scores.count)
@@ -347,7 +356,7 @@ class GameOverScene: SKScene {
                 rankLabel.horizontalAlignmentMode = .right
                 rankLabel.position = CGPoint(x: -150, y: yPos)
                 rankLabel.zPosition = 10
-                addChild(rankLabel)
+                content.addChild(rankLabel)
 
                 let nameLabel = SKLabelNode(fontNamed: "AmericanTypewriter")
                 nameLabel.text = String(entry.name.prefix(10))
@@ -356,7 +365,7 @@ class GameOverScene: SKScene {
                 nameLabel.horizontalAlignmentMode = .left
                 nameLabel.position = CGPoint(x: -120, y: yPos)
                 nameLabel.zPosition = 10
-                addChild(nameLabel)
+                content.addChild(nameLabel)
 
                 let scoreLabel = SKLabelNode(fontNamed: "AmericanTypewriter-Bold")
                 scoreLabel.text = "$\(entry.score).00"
@@ -365,7 +374,7 @@ class GameOverScene: SKScene {
                 scoreLabel.horizontalAlignmentMode = .right
                 scoreLabel.position = CGPoint(x: 150, y: yPos)
                 scoreLabel.zPosition = 10
-                addChild(scoreLabel)
+                content.addChild(scoreLabel)
             }
         }
     }
@@ -387,7 +396,7 @@ class GameOverScene: SKScene {
         continueLabel.position = CGPoint(x: 0, y: -180)
         continueLabel.zPosition = 10
         continueLabel.name = "continuePrompt"
-        addChild(continueLabel)
+        content.addChild(continueLabel)
 
         let blink = SKAction.sequence([
             SKAction.fadeAlpha(to: 0.2, duration: 0.5),
@@ -398,8 +407,8 @@ class GameOverScene: SKScene {
 
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         guard let touch = touches.first else { return }
-        let location = touch.location(in: self)
-        let nodes = nodes(at: location)
+        let nodes = nodes(at: touch.location(in: self))
+        let location = touch.location(in: content)  // Tap zones are in layout coordinates
 
         if isEnteringName {
             handleNameEntryTouch(nodes: nodes, location: location)
@@ -447,7 +456,7 @@ class GameOverScene: SKScene {
     private func updateCharacterDisplay() {
         let index = characters.index(characters.startIndex, offsetBy: currentCharIndex)
         let char = String(characters[index])
-        if let charLabel = childNode(withName: "currentChar") as? SKLabelNode {
+        if let charLabel = content.childNode(withName: "currentChar") as? SKLabelNode {
             charLabel.text = char
         }
     }
@@ -480,7 +489,7 @@ class GameOverScene: SKScene {
 
         // Remove name entry UI
         isEnteringName = false
-        removeAllChildren()
+        content.removeAllChildren()
 
         backgroundColor = .black
         if isVictory {
@@ -494,10 +503,7 @@ class GameOverScene: SKScene {
     }
 
     private func goToMenu() {
-        let menuScene = MenuScene(size: size)
-        menuScene.scaleMode = .aspectFill
-        menuScene.anchorPoint = CGPoint(x: 0.5, y: 0.5)
-        let transition = SKTransition.fade(withDuration: 0.5)
-        view?.presentScene(menuScene, transition: transition)
+        guard let view = view else { return }
+        SceneLayout.present(MenuScene(), in: view, transition: SKTransition.fade(withDuration: 0.5))
     }
 }

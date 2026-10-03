@@ -50,9 +50,20 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     var multiplierIndicator: SKLabelNode?
 
     // Constants
-    let magnetRadius: CGFloat = 200
     let magnetForce: CGFloat = 300
     let obstacleSpawnKey = "spawnObstacles"
+    let baseGravity: CGFloat = -5
+    let baseFlapVelocity: CGFloat = 300
+
+    // Layout, derived from the scene size in configureLayout() (see SceneLayout)
+    var safeFrame = CGRect.zero
+    var spriteScale: CGFloat = 1  // Sprites and physics run at 75% on landscape iPhones
+    var hudY: CGFloat = 320
+    var playerMaxY: CGFloat = 300
+    var obstacleYRange: Range<CGFloat> = -300..<350
+    var pickupYRange: Range<CGFloat> = -250..<300
+    let spawnX: CGFloat = 768
+    var magnetRadius: CGFloat { 200 * spriteScale }
 
     convenience init(gameMode: GameMode) {
         self.init(fileNamed: "GameScene")!
@@ -60,8 +71,11 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     }
 
     override func didMove(to view: SKView) {
-        player.position = CGPoint(x: -400, y: 250)
-        player.physicsBody = SKPhysicsBody(texture: player.texture!, size: player.texture!.size())
+        configureLayout()
+
+        player.size = scaled(player.texture!.size())
+        player.position = CGPoint(x: safeFrame.minX + 112, y: size.height / 2 - 134)
+        player.physicsBody = SKPhysicsBody(texture: player.texture!, size: player.size)
         player.physicsBody?.categoryBitMask = 1
         player.physicsBody?.collisionBitMask = 0
         addChild(player)
@@ -75,11 +89,13 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         }
 
         scheduleNextObstacle()
-        physicsWorld.gravity = CGVector(dx: 0, dy: -5)
+        physicsWorld.gravity = CGVector(dx: 0, dy: baseGravity * spriteScale)
         physicsWorld.contactDelegate = self
 
-        parallaxScroll(image: "sky", y: 0, z: -3, duration: 10, needsPhysics: false)
-        parallaxScroll(image: "ground", y: -340, z: -1, duration: 6, needsPhysics: true)
+        // Sky is bottom-aligned so its mountains always sit just above the ground
+        let bottom = -size.height / 2
+        parallaxScroll(image: "sky", y: bottom + 384, z: -3, duration: 10, needsPhysics: false)
+        parallaxScroll(image: "ground", y: bottom + 44, z: -1, duration: 6, needsPhysics: true)
         if GameSettings.isMusicOn {
             addChild(music)
         }
@@ -96,6 +112,25 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         pauseGame()
     }
 
+    /// Positions everything relative to the screen edges so the same code fits iPad and iPhone.
+    /// On a 4:3 iPad these work out to the game's original fixed positions.
+    private func configureLayout() {
+        let top = size.height / 2
+        let bottom = -size.height / 2
+        let isCompact = SceneLayout.isCompact(self)
+
+        safeFrame = SceneLayout.safeFrame(of: self)
+        spriteScale = isCompact ? 0.75 : 1
+        hudY = safeFrame.maxY - (isCompact ? 44 : 64)
+        playerMaxY = top - 84
+        obstacleYRange = (bottom + 84)..<(top - 34)
+        pickupYRange = (bottom + 134)..<(top - 84)
+    }
+
+    private func scaled(_ size: CGSize) -> CGSize {
+        return CGSize(width: size.width * spriteScale, height: size.height * spriteScale)
+    }
+
     private func playSound(_ fileName: String) {
         guard GameSettings.isSoundOn else { return }
         run(SKAction.playSoundFileNamed(fileName, waitForCompletion: false))
@@ -103,7 +138,8 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
 
     private func setupScoreLabel() {
         scoreLabel.fontColor = UIColor.black.withAlphaComponent(0.5)
-        scoreLabel.position.y = 320
+        scoreLabel.fontSize = SceneLayout.isCompact(self) ? 26 : 32
+        scoreLabel.position.y = hudY
         addChild(scoreLabel)
         score = 0
     }
@@ -113,7 +149,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         shieldIndicator = SKLabelNode(fontNamed: "AmericanTypewriter-Bold")
         shieldIndicator?.fontSize = 24
         shieldIndicator?.fontColor = SKColor(red: 0.0, green: 1.0, blue: 1.0, alpha: 0.3)
-        shieldIndicator?.position = CGPoint(x: 350, y: 320)
+        shieldIndicator?.position = CGPoint(x: safeFrame.maxX - 162, y: hudY)
         shieldIndicator?.text = "🛡️"
         shieldIndicator?.zPosition = 100
         addChild(shieldIndicator!)
@@ -122,7 +158,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         magnetIndicator = SKLabelNode(fontNamed: "AmericanTypewriter-Bold")
         magnetIndicator?.fontSize = 20
         magnetIndicator?.fontColor = SKColor(red: 1.0, green: 0.2, blue: 0.2, alpha: 0.3)
-        magnetIndicator?.position = CGPoint(x: 400, y: 320)
+        magnetIndicator?.position = CGPoint(x: safeFrame.maxX - 112, y: hudY)
         magnetIndicator?.text = "🧲"
         magnetIndicator?.zPosition = 100
         addChild(magnetIndicator!)
@@ -131,7 +167,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         multiplierIndicator = SKLabelNode(fontNamed: "AmericanTypewriter-Bold")
         multiplierIndicator?.fontSize = 20
         multiplierIndicator?.fontColor = SKColor(red: 1.0, green: 0.84, blue: 0.0, alpha: 0.3)
-        multiplierIndicator?.position = CGPoint(x: 450, y: 320)
+        multiplierIndicator?.position = CGPoint(x: safeFrame.maxX - 62, y: hudY)
         multiplierIndicator?.text = "2X"
         multiplierIndicator?.zPosition = 100
         addChild(multiplierIndicator!)
@@ -140,7 +176,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     private func setupPauseButton() {
         let button = SKNode()
         button.name = "pauseButton"
-        button.position = CGPoint(x: -460, y: 320)
+        button.position = CGPoint(x: safeFrame.minX + 52, y: hudY)
         button.zPosition = 100
 
         let circle = SKShapeNode(circleOfRadius: 26)
@@ -166,7 +202,8 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         timeLabel = SKLabelNode(fontNamed: "AmericanTypewriter-Bold")
         timeLabel?.fontSize = 20
         timeLabel?.fontColor = UIColor.white.withAlphaComponent(0.8)
-        timeLabel?.position = CGPoint(x: -380, y: -320)
+        let bottomHudY = safeFrame.minY + (SceneLayout.isCompact(self) ? 24 : 64)
+        timeLabel?.position = CGPoint(x: safeFrame.minX + 132, y: bottomHudY)
         timeLabel?.horizontalAlignmentMode = .left
         timeLabel?.text = "Time: 00:00"
         timeLabel?.zPosition = 100
@@ -176,7 +213,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         targetLabel = SKLabelNode(fontNamed: "AmericanTypewriter-Bold")
         targetLabel?.fontSize = 20
         targetLabel?.fontColor = SKColor(red: 0.0, green: 1.0, blue: 0.0, alpha: 1.0)
-        targetLabel?.position = CGPoint(x: 0, y: -320)
+        targetLabel?.position = CGPoint(x: 0, y: bottomHudY)
         targetLabel?.text = "Target: $0/$\(gameMode.targetScore)"
         targetLabel?.zPosition = 100
         addChild(targetLabel!)
@@ -233,7 +270,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             return
         }
 
-        player.physicsBody?.velocity = CGVector(dx: 0, dy: 300)
+        player.physicsBody?.velocity = CGVector(dx: 0, dy: baseFlapVelocity * spriteScale)
     }
 
     // MARK: - Pause
@@ -299,10 +336,8 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     }
 
     private func goToMenu() {
-        let menuScene = MenuScene(size: CGSize(width: 1024, height: 768))
-        menuScene.scaleMode = .aspectFill
-        menuScene.anchorPoint = CGPoint(x: 0.5, y: 0.5)
-        view?.presentScene(menuScene, transition: SKTransition.fade(withDuration: 0.5))
+        guard let view = view else { return }
+        SceneLayout.present(MenuScene(), in: view, transition: SKTransition.fade(withDuration: 0.5))
     }
 
     override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
@@ -333,12 +368,12 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         }
 
         // Constrain player position
-        if player.position.y > 300 {
-            player.position.y = 300
+        if player.position.y > playerMaxY {
+            player.position.y = playerMaxY
         }
 
         // Ease player rotation toward its velocity
-        let targetAngle = player.physicsBody!.velocity.dy * 0.001
+        let targetAngle = player.physicsBody!.velocity.dy * 0.001 / spriteScale
         player.zRotation += (targetAngle - player.zRotation) * min(1, CGFloat(deltaTime / 0.1))
 
         // Count down timed power-ups
@@ -438,18 +473,17 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         guard !isGameOver else { return }
 
         let obstacle = SKSpriteNode(imageNamed: "300")
+        obstacle.size = scaled(obstacle.texture!.size())
         obstacle.zPosition = -1
-        obstacle.position.x = 768
+        obstacle.position.x = spawnX
         addChild(obstacle)
 
-
-        obstacle.physicsBody = SKPhysicsBody(texture: obstacle.texture!, size: obstacle.texture!.size())
+        obstacle.physicsBody = SKPhysicsBody(texture: obstacle.texture!, size: obstacle.size)
         obstacle.physicsBody?.isDynamic = false
         obstacle.physicsBody?.contactTestBitMask = 1
         obstacle.name = "obstacle"
 
-
-        obstacle.position.y = CGFloat.random(in: -300..<350)
+        obstacle.position.y = CGFloat.random(in: obstacleYRange)
         let move = SKAction.moveBy(x: -1536, y: 0, duration: scrollDuration)
         let remove = SKAction.removeFromParent()
         let action = SKAction.sequence([move, remove])
@@ -460,11 +494,12 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             guard let self = self, !self.isGameOver else { return }
 
             let coin = SKSpriteNode(imageNamed: "cash")
-            coin.physicsBody = SKPhysicsBody(texture: coin.texture!, size: coin.texture!.size())
+            coin.size = self.scaled(coin.texture!.size())
+            coin.physicsBody = SKPhysicsBody(texture: coin.texture!, size: coin.size)
             coin.physicsBody?.contactTestBitMask = 1
             coin.physicsBody?.isDynamic = false
-            coin.position.y = CGFloat.random(in: -300..<350)
-            coin.position.x = 768
+            coin.position.y = CGFloat.random(in: self.obstacleYRange)
+            coin.position.x = self.spawnX
             coin.name = "score"
             coin.run(action)
 
@@ -486,9 +521,9 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         run(SKAction.wait(forDuration: 1.25)) { [weak self] in
             guard let self = self, !self.isGameOver else { return }
 
-            let heart = GoldenHeart.createNode()
-            heart.position.y = CGFloat.random(in: -250..<300)
-            heart.position.x = 768
+            let heart = GoldenHeart.createNode(scale: self.spriteScale)
+            heart.position.y = CGFloat.random(in: self.pickupYRange)
+            heart.position.x = self.spawnX
             heart.run(action)
 
             self.addChild(heart)
@@ -500,9 +535,9 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             guard let self = self, !self.isGameOver else { return }
 
             let powerUpType = PowerUp.randomType()
-            let powerUpNode = PowerUp.createNode(type: powerUpType)
-            powerUpNode.position.y = CGFloat.random(in: -250..<300)
-            powerUpNode.position.x = 768
+            let powerUpNode = PowerUp.createNode(type: powerUpType, scale: self.spriteScale)
+            powerUpNode.position.y = CGFloat.random(in: self.pickupYRange)
+            powerUpNode.position.x = self.spawnX
             powerUpNode.run(action)
 
             self.addChild(powerUpNode)
@@ -549,7 +584,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         addChild(sparkles)
 
         let message = GoldenHeart.createCollectMessage(points: points)
-        message.position = CGPoint(x: 0, y: 120)
+        message.position = CGPoint(x: 0, y: min(120, hudY - 170))
         addChild(message)
 
         node.removeFromParent()
@@ -580,7 +615,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         shieldNode?.removeFromParent()
 
         // Create shield visual around player
-        shieldNode = SKShapeNode(circleOfRadius: 60)
+        shieldNode = SKShapeNode(circleOfRadius: 60 * spriteScale)
         shieldNode?.fillColor = SKColor(red: 0.0, green: 1.0, blue: 1.0, alpha: 0.2)
         shieldNode?.strokeColor = SKColor(red: 0.0, green: 1.0, blue: 1.0, alpha: 0.8)
         shieldNode?.lineWidth = 3
@@ -680,9 +715,8 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
                 completionTime: self.elapsedTime,
                 gameMode: self.gameMode
             )
-            gameOverScene.scaleMode = .aspectFill
-            let transition = SKTransition.fade(withDuration: 0.5)
-            self.view?.presentScene(gameOverScene, transition: transition)
+            guard let view = self.view else { return }
+            SceneLayout.present(gameOverScene, in: view, transition: SKTransition.fade(withDuration: 0.5))
         }
     }
 
@@ -707,9 +741,8 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
                 completionTime: nil,
                 gameMode: self.gameMode
             )
-            gameOverScene.scaleMode = .aspectFill
-            let transition = SKTransition.fade(withDuration: 0.5)
-            self.view?.presentScene(gameOverScene, transition: transition)
+            guard let view = self.view else { return }
+            SceneLayout.present(gameOverScene, in: view, transition: SKTransition.fade(withDuration: 0.5))
         }
     }
 

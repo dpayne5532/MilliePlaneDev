@@ -64,12 +64,12 @@ enum PowerUpType: CaseIterable {
 class PowerUp {
     static let spawnChance: Double = 0.10  // 10% chance per obstacle spawn
 
-    static func createNode(type: PowerUpType) -> SKNode {
+    static func createNode(type: PowerUpType, scale: CGFloat = 1) -> SKNode {
         let container = SKNode()
         container.name = type.nodeName
 
         // Create the circle background
-        let circle = SKShapeNode(circleOfRadius: 25)
+        let circle = SKShapeNode(circleOfRadius: 25 * scale)
         circle.fillColor = type.color
         circle.strokeColor = .white
         circle.lineWidth = 3
@@ -79,14 +79,14 @@ class PowerUp {
         // Create the label
         let label = SKLabelNode(fontNamed: "AmericanTypewriter-Bold")
         label.text = type.label
-        label.fontSize = type.label == "2X" ? 18 : 24
+        label.fontSize = (type.label == "2X" ? 18 : 24) * scale
         label.fontColor = type.labelColor
         label.verticalAlignmentMode = .center
         label.horizontalAlignmentMode = .center
         container.addChild(label)
 
         // Add physics body
-        let physicsBody = SKPhysicsBody(circleOfRadius: 25)
+        let physicsBody = SKPhysicsBody(circleOfRadius: 25 * scale)
         physicsBody.isDynamic = false
         physicsBody.contactTestBitMask = 1
         container.physicsBody = physicsBody

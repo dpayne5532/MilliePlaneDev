@@ -26,6 +26,7 @@
 		CCCC000C1F951D59001794D5 /* GameSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCCC000B1F951D59001794D5 /* GameSettings.swift */; };
 		CCCC000E1F951D59001794D5 /* GoldenHeart.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCCC000D1F951D59001794D5 /* GoldenHeart.swift */; };
 		CCCC00101F951D59001794D5 /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCCC000F1F951D59001794D5 /* SceneDelegate.swift */; };
+		CCCC00121F951D59001794D5 /* SceneLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCCC00111F951D59001794D5 /* SceneLayout.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -50,6 +51,7 @@
 		CCCC000B1F951D59001794D5 /* GameSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameSettings.swift; sourceTree = "<group>"; };
 		CCCC000D1F951D59001794D5 /* GoldenHeart.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoldenHeart.swift; sourceTree = "<group>"; };
 		CCCC000F1F951D59001794D5 /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
+		CCCC00111F951D59001794D5 /* SceneLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneLayout.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -97,6 +99,7 @@
 				CCCC000B1F951D59001794D5 /* GameSettings.swift */,
 				CCCC000D1F951D59001794D5 /* GoldenHeart.swift */,
 				CCCC000F1F951D59001794D5 /* SceneDelegate.swift */,
+				CCCC00111F951D59001794D5 /* SceneLayout.swift */,
 				51C6E4C51F951D59001794D5 /* GameViewController.swift */,
 				51C6E4C71F951D59001794D5 /* Main.storyboard */,
 				51C6E4CA1F951D59001794D5 /* Assets.xcassets */,
@@ -193,6 +196,7 @@
 				CCCC000C1F951D59001794D5 /* GameSettings.swift in Sources */,
 				CCCC000E1F951D59001794D5 /* GoldenHeart.swift in Sources */,
 				CCCC00101F951D59001794D5 /* SceneDelegate.swift in Sources */,
+				CCCC00121F951D59001794D5 /* SceneLayout.swift in Sources */,
 				51C6E4C61F951D59001794D5 /* GameViewController.swift in Sources */,
 				51C6E4BE1F951D59001794D5 /* AppDelegate.swift in Sources */,
 			);
@@ -345,7 +349,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 7;
+				CURRENT_PROJECT_VERSION = 8;
 				DEVELOPMENT_TEAM = 99ZUCD4A48;
 				INFOPLIST_FILE = MilliePlane/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Millie Plane";
@@ -361,7 +365,7 @@
 				SUPPORTS_MACCATALYST = NO;
 				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = 2;
+				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Debug;
 		};
@@ -370,7 +374,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 7;
+				CURRENT_PROJECT_VERSION = 8;
 				DEVELOPMENT_TEAM = 99ZUCD4A48;
 				INFOPLIST_FILE = MilliePlane/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Millie Plane";
@@ -386,7 +390,7 @@
 				SUPPORTS_MACCATALYST = NO;
 				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = 2;
+				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Release;
 		};

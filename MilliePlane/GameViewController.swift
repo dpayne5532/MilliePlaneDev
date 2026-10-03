@@ -12,18 +12,21 @@ class GameViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        
-        if let view = self.view as! SKView? {
-            // Start with the menu scene
-            let menuScene = MenuScene(size: CGSize(width: 1024, height: 768))
-            menuScene.scaleMode = .aspectFill
-            menuScene.anchorPoint = CGPoint(x: 0.5, y: 0.5)
-            view.presentScene(menuScene)
 
+        if let view = self.view as? SKView {
             view.preferredFramesPerSecond = 120
             view.ignoresSiblingOrder = true
             view.showsFPS = false
             view.showsNodeCount = false
+        }
+    }
+
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+
+        // Present the menu once the view has its real size, so the scene matches the screen's shape
+        if let view = self.view as? SKView, view.scene == nil {
+            SceneLayout.present(MenuScene(), in: view)
         }
     }
 

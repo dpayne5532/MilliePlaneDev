@@ -432,24 +432,6 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         let newLevel = min(score / 10, maxDifficultyLevel)
         guard newLevel > difficultyLevel else { return }
         difficultyLevel = newLevel
-        showBanner("FASTER!", color: SKColor(red: 1.0, green: 0.4, blue: 0.0, alpha: 1.0))
-    }
-
-    private func showBanner(_ text: String, color: SKColor) {
-        let banner = SKLabelNode(fontNamed: "AmericanTypewriter-Bold")
-        banner.text = text
-        banner.fontSize = 48
-        banner.fontColor = color
-        banner.position = CGPoint(x: 0, y: 180)
-        banner.zPosition = 500
-        banner.setScale(0.5)
-        addChild(banner)
-        banner.run(SKAction.sequence([
-            SKAction.scale(to: 1.0, duration: 0.2),
-            SKAction.wait(forDuration: 0.8),
-            SKAction.fadeOut(withDuration: 0.4),
-            SKAction.removeFromParent()
-        ]))
     }
 
     func createObstacle() {

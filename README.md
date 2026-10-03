@@ -51,7 +51,7 @@
 | **High Score Leaderboard** | Top 10 scores with arcade-style name entry |
 | **Millie Bucks** | Collect cash to rack up your score |
 | **Power-Ups** | Shield, Coin Magnet and 2X Multiplier |
-| **Golden Hearts** | Rare hearts for Grandma Karen, worth $5 bonus Millie Bucks |
+| **Golden Hearts** | Rare hearts worth $10.00 From Grandma Karen |
 | **Rising Difficulty** | Clouds come faster every $10 you collect |
 | **Pause Anytime** | Tap the pause button (or leave the app) to take a break |
 | **Danger Zone Soundtrack** | Every great pilot needs a great soundtrack (toggle music & sound on the title screen) |
@@ -107,7 +107,7 @@ MilliePlane/
 ├── HighScoreManager.swift   # Score persistence
 ├── GameMode.swift           # Endless & Target Score modes
 ├── PowerUp.swift            # Shield, magnet & multiplier
-├── GoldenHeart.swift        # Golden hearts for Grandma Karen
+├── GoldenHeart.swift        # Golden hearts from Grandma Karen
 ├── GameSettings.swift       # Music & sound preferences
 ├── GameScene.sks            # SpriteKit scene file
 ├── PlayerExplosion.sks      # Explosion particle effect

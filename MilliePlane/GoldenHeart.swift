@@ -2,7 +2,7 @@
 //  GoldenHeart.swift
 //  MilliePlane
 //
-//  A rare golden heart in memory of Grandma Karen, worth bonus Millie Bucks
+//  A rare golden heart from Grandma Karen, worth $10 Millie Bucks
 //
 
 import SpriteKit
@@ -10,7 +10,7 @@ import SpriteKit
 enum GoldenHeart {
     static let nodeName = "goldenHeart"
     static let spawnChance: Double = 0.04  // 4% chance per obstacle spawn
-    static let value = 5
+    static let value = 10
 
     static let gold = SKColor(red: 1.0, green: 0.84, blue: 0.0, alpha: 1.0)
     static let lavender = SKColor(red: 0.85, green: 0.75, blue: 1.0, alpha: 1.0)
@@ -48,25 +48,35 @@ enum GoldenHeart {
         return container
     }
 
-    /// Floating "For Grandma Karen" message shown when a heart is collected
+    /// Floating "$10.00 From Grandma Karen" message shown when a heart is collected
     static func createCollectMessage(points: Int) -> SKNode {
         let container = SKNode()
         container.zPosition = 500
 
+        // Soft backdrop so the message reads clearly against the bright sky
+        let backdrop = SKShapeNode(rectOf: CGSize(width: 360, height: 96), cornerRadius: 18)
+        backdrop.fillColor = SKColor(red: 0.15, green: 0.05, blue: 0.25, alpha: 0.75)
+        backdrop.strokeColor = gold
+        backdrop.lineWidth = 2
+        backdrop.position = CGPoint(x: 0, y: -19)
+        container.addChild(backdrop)
+
+        let amount = SKLabelNode(fontNamed: "AmericanTypewriter-Bold")
+        amount.text = "$\(points).00"
+        amount.fontSize = 40
+        amount.fontColor = gold
+        amount.verticalAlignmentMode = .center
+        amount.zPosition = 1
+        container.addChild(amount)
+
         let tribute = SKLabelNode(fontNamed: "AmericanTypewriter-Bold")
-        tribute.text = "♥ For Grandma Karen ♥"
+        tribute.text = "From Grandma Karen ♥"
         tribute.fontSize = 26
         tribute.fontColor = lavender
+        tribute.position = CGPoint(x: 0, y: -38)
         tribute.verticalAlignmentMode = .center
+        tribute.zPosition = 1
         container.addChild(tribute)
-
-        let bonus = SKLabelNode(fontNamed: "AmericanTypewriter-Bold")
-        bonus.text = "+$\(points).00"
-        bonus.fontSize = 22
-        bonus.fontColor = gold
-        bonus.position = CGPoint(x: 0, y: -30)
-        bonus.verticalAlignmentMode = .center
-        container.addChild(bonus)
 
         container.setScale(0.5)
         container.run(SKAction.sequence([

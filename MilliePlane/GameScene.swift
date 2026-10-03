@@ -1,41 +1,46 @@
 //
 //  GameScene.swift
-//  DiveIntoSpriteKit
+//  MilliePlane
 //
-//  Created by Paul Hudson on 16/10/2017.
-//  Copyright © 2017 Paul Hudson. All rights reserved.
+//  Core gameplay: flying, obstacles, Millie Bucks and power-ups
 //
 
+import AVFoundation
 import SpriteKit
 
 @objcMembers
 class GameScene: SKScene, SKPhysicsContactDelegate {
     let player = SKSpriteNode(imageNamed: "logoPlane")
     let music = SKAudioNode(fileNamed: "DangerZone.mp3")
-    var obstacleTimer: Timer?
     var scoreLabel = SKLabelNode(fontNamed: "Baskerville-Bold")
     var score = 0 {
         didSet {
             updateScoreDisplay()
+            updateDifficulty()
             checkVictoryCondition()
         }
     }
 
     // Game Mode
     var gameMode: GameMode = .endless
-    var gameStartTime: TimeInterval = 0
+    var lastUpdateTime: TimeInterval = 0
     var elapsedTime: TimeInterval = 0
     var timeLabel: SKLabelNode?
     var targetLabel: SKLabelNode?
     var isGameOver = false
+    var isGamePaused = false
+
+    // Difficulty ramps up every 10 Millie Bucks
+    var difficultyLevel = 0
+    let maxDifficultyLevel = 4
+    var obstacleSpawnInterval: TimeInterval { 1.5 - 0.15 * Double(difficultyLevel) }
+    var scrollDuration: TimeInterval { 9.0 - 0.75 * Double(difficultyLevel) }
 
     // Power-up state
     var isShieldActive = false
     var isMagnetActive = false
     var isMultiplierActive = false
     var shieldNode: SKShapeNode?
-    var magnetTimer: Timer?
-    var multiplierTimer: Timer?
     var magnetTimeRemaining: TimeInterval = 0
     var multiplierTimeRemaining: TimeInterval = 0
 
@@ -47,6 +52,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     // Constants
     let magnetRadius: CGFloat = 200
     let magnetForce: CGFloat = 300
+    let obstacleSpawnKey = "spawnObstacles"
 
     convenience init(gameMode: GameMode) {
         self.init(fileNamed: "GameScene")!
@@ -62,20 +68,37 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
 
         setupScoreLabel()
         setupPowerUpHUD()
+        setupPauseButton()
 
         if gameMode == .targetScore {
             setupTargetScoreHUD()
         }
 
-        obstacleTimer = Timer.scheduledTimer(timeInterval: 1.5, target: self, selector: #selector(createObstacle), userInfo: nil, repeats: true)
+        scheduleNextObstacle()
         physicsWorld.gravity = CGVector(dx: 0, dy: -5)
         physicsWorld.contactDelegate = self
 
         parallaxScroll(image: "sky", y: 0, z: -3, duration: 10, needsPhysics: false)
         parallaxScroll(image: "ground", y: -340, z: -1, duration: 6, needsPhysics: true)
-        addChild(music)
+        if GameSettings.isMusicOn {
+            addChild(music)
+        }
 
-        gameStartTime = 0
+        NotificationCenter.default.addObserver(self, selector: #selector(appWillResignActive),
+                                               name: UIApplication.willResignActiveNotification, object: nil)
+    }
+
+    override func willMove(from view: SKView) {
+        NotificationCenter.default.removeObserver(self)
+    }
+
+    func appWillResignActive() {
+        pauseGame()
+    }
+
+    private func playSound(_ fileName: String) {
+        guard GameSettings.isSoundOn else { return }
+        run(SKAction.playSoundFileNamed(fileName, waitForCompletion: false))
     }
 
     private func setupScoreLabel() {
@@ -112,6 +135,30 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         multiplierIndicator?.text = "2X"
         multiplierIndicator?.zPosition = 100
         addChild(multiplierIndicator!)
+    }
+
+    private func setupPauseButton() {
+        let button = SKNode()
+        button.name = "pauseButton"
+        button.position = CGPoint(x: -460, y: 320)
+        button.zPosition = 100
+
+        let circle = SKShapeNode(circleOfRadius: 26)
+        circle.fillColor = UIColor.black.withAlphaComponent(0.3)
+        circle.strokeColor = .white
+        circle.lineWidth = 2
+        button.addChild(circle)
+
+        for x in [-7, 7] {
+            let bar = SKShapeNode(rectOf: CGSize(width: 7, height: 22), cornerRadius: 2)
+            bar.fillColor = .white
+            bar.strokeColor = .clear
+            bar.position.x = CGFloat(x)
+            bar.zPosition = 1
+            button.addChild(bar)
+        }
+
+        addChild(button)
     }
 
     private func setupTargetScoreHUD() {
@@ -152,7 +199,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         // Update magnet indicator
         if isMagnetActive {
             magnetIndicator?.fontColor = SKColor(red: 1.0, green: 0.2, blue: 0.2, alpha: 1.0)
-            magnetIndicator?.text = "🧲\(Int(magnetTimeRemaining))s"
+            magnetIndicator?.text = "🧲\(Int(magnetTimeRemaining.rounded(.up)))s"
         } else {
             magnetIndicator?.fontColor = SKColor(red: 1.0, green: 0.2, blue: 0.2, alpha: 0.3)
             magnetIndicator?.text = "🧲"
@@ -161,7 +208,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         // Update multiplier indicator
         if isMultiplierActive {
             multiplierIndicator?.fontColor = SKColor(red: 1.0, green: 0.84, blue: 0.0, alpha: 1.0)
-            multiplierIndicator?.text = "2X \(Int(multiplierTimeRemaining))s"
+            multiplierIndicator?.text = "2X \(Int(multiplierTimeRemaining.rounded(.up)))s"
         } else {
             multiplierIndicator?.fontColor = SKColor(red: 1.0, green: 0.84, blue: 0.0, alpha: 0.3)
             multiplierIndicator?.text = "2X"
@@ -169,7 +216,93 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     }
 
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
+        guard let touch = touches.first else { return }
+        let touchedNames = nodes(at: touch.location(in: self)).flatMap { [$0.name, $0.parent?.name] }
+
+        if isGamePaused {
+            if touchedNames.contains("menuButton") {
+                goToMenu()
+            } else {
+                resumeGame()
+            }
+            return
+        }
+
+        if touchedNames.contains("pauseButton") {
+            pauseGame()
+            return
+        }
+
         player.physicsBody?.velocity = CGVector(dx: 0, dy: 300)
+    }
+
+    // MARK: - Pause
+
+    private func pauseGame() {
+        guard !isGamePaused && !isGameOver else { return }
+        isGamePaused = true
+        isPaused = true
+        audioEngine.pause()
+
+        let overlay = SKNode()
+        overlay.name = "pauseOverlay"
+        overlay.zPosition = 2000
+
+        let dim = SKShapeNode(rectOf: CGSize(width: 2000, height: 2000))
+        dim.fillColor = UIColor.black.withAlphaComponent(0.6)
+        dim.strokeColor = .clear
+        overlay.addChild(dim)
+
+        let pausedLabel = SKLabelNode(fontNamed: "AmericanTypewriter-Bold")
+        pausedLabel.text = "PAUSED"
+        pausedLabel.fontSize = 72
+        pausedLabel.fontColor = SKColor(red: 1.0, green: 0.8, blue: 0.0, alpha: 1.0)
+        pausedLabel.position = CGPoint(x: 0, y: 60)
+        pausedLabel.zPosition = 1
+        overlay.addChild(pausedLabel)
+
+        let resumeLabel = SKLabelNode(fontNamed: "AmericanTypewriter")
+        resumeLabel.text = "TAP TO RESUME"
+        resumeLabel.fontSize = 28
+        resumeLabel.fontColor = .white
+        resumeLabel.position = CGPoint(x: 0, y: 0)
+        resumeLabel.zPosition = 1
+        overlay.addChild(resumeLabel)
+
+        let menuButton = SKNode()
+        menuButton.name = "menuButton"
+        menuButton.position = CGPoint(x: 0, y: -90)
+        menuButton.zPosition = 1
+        let menuBackground = SKShapeNode(rectOf: CGSize(width: 200, height: 60), cornerRadius: 10)
+        menuBackground.fillColor = SKColor(red: 0.8, green: 0.1, blue: 0.1, alpha: 1.0)
+        menuBackground.strokeColor = .white
+        menuBackground.lineWidth = 3
+        menuButton.addChild(menuBackground)
+        let menuLabel = SKLabelNode(fontNamed: "AmericanTypewriter-Bold")
+        menuLabel.text = "QUIT TO MENU"
+        menuLabel.fontSize = 20
+        menuLabel.fontColor = .white
+        menuLabel.verticalAlignmentMode = .center
+        menuLabel.zPosition = 1
+        menuButton.addChild(menuLabel)
+        overlay.addChild(menuButton)
+
+        addChild(overlay)
+    }
+
+    private func resumeGame() {
+        guard isGamePaused else { return }
+        isGamePaused = false
+        isPaused = false
+        try? audioEngine.start()
+        childNode(withName: "pauseOverlay")?.removeFromParent()
+    }
+
+    private func goToMenu() {
+        let menuScene = MenuScene(size: CGSize(width: 1024, height: 768))
+        menuScene.scaleMode = .aspectFill
+        menuScene.anchorPoint = CGPoint(x: 0.5, y: 0.5)
+        view?.presentScene(menuScene, transition: SKTransition.fade(withDuration: 0.5))
     }
 
     override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
@@ -179,11 +312,18 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     override func update(_ currentTime: TimeInterval) {
         guard !isGameOver else { return }
 
-        // Track game time for target score mode
-        if gameStartTime == 0 {
-            gameStartTime = currentTime
+        if isGamePaused {
+            // SpriteKit un-pauses scenes when the app returns to the foreground; keep ours paused
+            isPaused = true
+            if audioEngine.isRunning { audioEngine.pause() }
+            lastUpdateTime = 0
+            return
         }
-        elapsedTime = currentTime - gameStartTime
+
+        // Frame delta, clamped so time spent paused or backgrounded doesn't count
+        let deltaTime = lastUpdateTime == 0 ? 0 : min(currentTime - lastUpdateTime, 0.1)
+        lastUpdateTime = currentTime
+        elapsedTime += deltaTime
 
         // Update time display for target score mode
         if gameMode == .targetScore {
@@ -197,40 +337,51 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             player.position.y = 300
         }
 
-        // Rotate player based on velocity
-        let value = player.physicsBody!.velocity.dy * 0.001
-        let rotate = SKAction.rotate(toAngle: value, duration: 0.1)
-        player.run(rotate)
+        // Ease player rotation toward its velocity
+        let targetAngle = player.physicsBody!.velocity.dy * 0.001
+        player.zRotation += (targetAngle - player.zRotation) * min(1, CGFloat(deltaTime / 0.1))
 
-        // Magnet effect - attract nearby coins
+        // Count down timed power-ups
         if isMagnetActive {
-            applyMagnetEffect()
+            magnetTimeRemaining -= deltaTime
+            if magnetTimeRemaining <= 0 {
+                deactivateMagnet()
+            } else {
+                applyMagnetEffect(deltaTime: CGFloat(deltaTime))
+            }
+        }
+
+        if isMultiplierActive {
+            multiplierTimeRemaining -= deltaTime
+            if multiplierTimeRemaining <= 0 {
+                deactivateMultiplier()
+            }
         }
 
         // Update power-up HUD
         updatePowerUpHUD()
     }
 
-    private func applyMagnetEffect() {
-        enumerateChildNodes(withName: "score") { [weak self] node, _ in
-            guard let self = self else { return }
+    private func applyMagnetEffect(deltaTime: CGFloat) {
+        let attractable = children.filter { $0.name == "score" || $0.name == GoldenHeart.nodeName }
 
-            let distance = hypot(node.position.x - self.player.position.x,
-                               node.position.y - self.player.position.y)
+        for node in attractable {
+            let distance = hypot(node.position.x - player.position.x,
+                                 node.position.y - player.position.y)
 
-            if distance < self.magnetRadius {
+            if distance < magnetRadius && distance > 0 {
                 // Calculate direction toward player
-                let dx = self.player.position.x - node.position.x
-                let dy = self.player.position.y - node.position.y
+                let dx = player.position.x - node.position.x
+                let dy = player.position.y - node.position.y
 
                 // Normalize and apply force (stronger when closer)
-                let strength = (self.magnetRadius - distance) / self.magnetRadius
-                let normalizedDx = dx / distance * self.magnetForce * strength
-                let normalizedDy = dy / distance * self.magnetForce * strength
+                let strength = (magnetRadius - distance) / magnetRadius
+                let normalizedDx = dx / distance * magnetForce * strength
+                let normalizedDy = dy / distance * magnetForce * strength
 
-                // Move coin toward player
-                let moveAction = SKAction.moveBy(x: normalizedDx * 0.016, y: normalizedDy * 0.016, duration: 0.016)
-                node.run(moveAction)
+                // Move toward player (its scroll action is relative, so the two combine)
+                node.position.x += normalizedDx * deltaTime
+                node.position.y += normalizedDy * deltaTime
             }
         }
     }
@@ -262,6 +413,45 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         }
     }
 
+    // MARK: - Spawning & Difficulty
+
+    private func scheduleNextObstacle() {
+        // SKActions (unlike Timers) pause along with the scene
+        let spawn = SKAction.sequence([
+            SKAction.wait(forDuration: obstacleSpawnInterval),
+            SKAction.run { [weak self] in
+                guard let self = self, !self.isGameOver else { return }
+                self.createObstacle()
+                self.scheduleNextObstacle()
+            }
+        ])
+        run(spawn, withKey: obstacleSpawnKey)
+    }
+
+    private func updateDifficulty() {
+        let newLevel = min(score / 10, maxDifficultyLevel)
+        guard newLevel > difficultyLevel else { return }
+        difficultyLevel = newLevel
+        showBanner("FASTER!", color: SKColor(red: 1.0, green: 0.4, blue: 0.0, alpha: 1.0))
+    }
+
+    private func showBanner(_ text: String, color: SKColor) {
+        let banner = SKLabelNode(fontNamed: "AmericanTypewriter-Bold")
+        banner.text = text
+        banner.fontSize = 48
+        banner.fontColor = color
+        banner.position = CGPoint(x: 0, y: 180)
+        banner.zPosition = 500
+        banner.setScale(0.5)
+        addChild(banner)
+        banner.run(SKAction.sequence([
+            SKAction.scale(to: 1.0, duration: 0.2),
+            SKAction.wait(forDuration: 0.8),
+            SKAction.fadeOut(withDuration: 0.4),
+            SKAction.removeFromParent()
+        ]))
+    }
+
     func createObstacle() {
         guard !isGameOver else { return }
 
@@ -278,13 +468,13 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
 
 
         obstacle.position.y = CGFloat.random(in: -300..<350)
-        let move = SKAction.moveTo(x: -768, duration: 9)
+        let move = SKAction.moveBy(x: -1536, y: 0, duration: scrollDuration)
         let remove = SKAction.removeFromParent()
         let action = SKAction.sequence([move, remove])
         obstacle.run(action)
 
         // Spawn coin
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.75) { [weak self] in
+        run(SKAction.wait(forDuration: 0.75)) { [weak self] in
             guard let self = self, !self.isGameOver else { return }
 
             let coin = SKSpriteNode(imageNamed: "cash")
@@ -303,10 +493,28 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         if PowerUp.shouldSpawn() {
             spawnPowerUp(withAction: action)
         }
+
+        // Rarely, a golden heart for Grandma Karen
+        if GoldenHeart.shouldSpawn() {
+            spawnGoldenHeart(withAction: action)
+        }
+    }
+
+    private func spawnGoldenHeart(withAction action: SKAction) {
+        run(SKAction.wait(forDuration: 1.25)) { [weak self] in
+            guard let self = self, !self.isGameOver else { return }
+
+            let heart = GoldenHeart.createNode()
+            heart.position.y = CGFloat.random(in: -250..<300)
+            heart.position.x = 768
+            heart.run(action)
+
+            self.addChild(heart)
+        }
     }
 
     private func spawnPowerUp(withAction action: SKAction) {
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
+        run(SKAction.wait(forDuration: 1.0)) { [weak self] in
             guard let self = self, !self.isGameOver else { return }
 
             let powerUpType = PowerUp.randomType()
@@ -326,6 +534,8 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             handleObstacleCollision(node)
         } else if node.name == "score" {
             handleCoinCollection(node)
+        } else if node.name == GoldenHeart.nodeName {
+            handleGoldenHeartCollection(node)
         } else if node.name?.starts(with: "powerup_") == true {
             handlePowerUpCollection(node)
         }
@@ -343,15 +553,31 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     }
 
     private func handleCoinCollection(_ node: SKNode) {
-        run(SKAction.playSoundFileNamed("score.wav", waitForCompletion: false))
+        playSound("score.wav")
         node.removeFromParent()
         score += isMultiplierActive ? 2 : 1
+    }
+
+    private func handleGoldenHeartCollection(_ node: SKNode) {
+        playSound("score.wav")
+        let points = GoldenHeart.value * (isMultiplierActive ? 2 : 1)
+
+        let sparkles = GoldenHeart.createSparkles()
+        sparkles.position = node.position
+        addChild(sparkles)
+
+        let message = GoldenHeart.createCollectMessage(points: points)
+        message.position = CGPoint(x: 0, y: 120)
+        addChild(message)
+
+        node.removeFromParent()
+        score += points
     }
 
     private func handlePowerUpCollection(_ node: SKNode) {
         guard let nodeName = node.name else { return }
 
-        run(SKAction.playSoundFileNamed("score.wav", waitForCompletion: false))
+        playSound("score.wav")
         node.removeFromParent()
 
         if nodeName == PowerUpType.shield.nodeName {
@@ -419,59 +645,21 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     private func activateMagnet() {
         isMagnetActive = true
         magnetTimeRemaining = PowerUpType.magnet.duration
-
-        // Cancel existing timer if any
-        magnetTimer?.invalidate()
-
-        // Start countdown timer
-        magnetTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] timer in
-            guard let self = self else {
-                timer.invalidate()
-                return
-            }
-
-            self.magnetTimeRemaining -= 1
-
-            if self.magnetTimeRemaining <= 0 {
-                self.deactivateMagnet()
-            }
-        }
     }
 
     private func deactivateMagnet() {
         isMagnetActive = false
         magnetTimeRemaining = 0
-        magnetTimer?.invalidate()
-        magnetTimer = nil
     }
 
     private func activateMultiplier() {
         isMultiplierActive = true
         multiplierTimeRemaining = PowerUpType.multiplier.duration
-
-        // Cancel existing timer if any
-        multiplierTimer?.invalidate()
-
-        // Start countdown timer
-        multiplierTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] timer in
-            guard let self = self else {
-                timer.invalidate()
-                return
-            }
-
-            self.multiplierTimeRemaining -= 1
-
-            if self.multiplierTimeRemaining <= 0 {
-                self.deactivateMultiplier()
-            }
-        }
     }
 
     private func deactivateMultiplier() {
         isMultiplierActive = false
         multiplierTimeRemaining = 0
-        multiplierTimer?.invalidate()
-        multiplierTimer = nil
     }
 
     // MARK: - Victory Condition
@@ -484,9 +672,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
 
     private func triggerVictory() {
         isGameOver = true
-        obstacleTimer?.invalidate()
-        magnetTimer?.invalidate()
-        multiplierTimer?.invalidate()
+        removeAction(forKey: obstacleSpawnKey)
 
         // Victory animation
         let victoryLabel = SKLabelNode(fontNamed: "AmericanTypewriter-Bold")
@@ -503,7 +689,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         victoryLabel.run(scaleUp)
 
         // Transition to game over scene with victory state
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2) { [weak self] in
+        run(SKAction.wait(forDuration: 2)) { [weak self] in
             guard let self = self else { return }
 
             let gameOverScene = GameOverScene(
@@ -520,19 +706,17 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
 
     private func triggerGameOver() {
         isGameOver = true
-        obstacleTimer?.invalidate()
-        magnetTimer?.invalidate()
-        multiplierTimer?.invalidate()
+        removeAction(forKey: obstacleSpawnKey)
 
         if let explosion = SKEmitterNode(fileNamed: "PlayerExplosion") {
             explosion.position = player.position
             addChild(explosion)
         }
-        run(SKAction.playSoundFileNamed("explosion", waitForCompletion: false))
+        playSound("explosion")
         player.removeFromParent()
         music.removeFromParent()
 
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2) { [weak self] in
+        run(SKAction.wait(forDuration: 2)) { [weak self] in
             guard let self = self else { return }
 
             let gameOverScene = GameOverScene(

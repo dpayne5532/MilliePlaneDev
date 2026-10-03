@@ -74,7 +74,7 @@ class HighScoreManager {
             UserDefaults.standard.set(data, forKey: highScoresKey)
         }
 
-        return scores.firstIndex(where: { $0.score == score && $0.name == name.uppercased() }).map { $0 + 1 }
+        return scores.firstIndex(where: { $0.date == newEntry.date && $0.name == newEntry.name }).map { $0 + 1 }
     }
 
     func clearScores() {
@@ -132,7 +132,7 @@ class HighScoreManager {
             UserDefaults.standard.set(data, forKey: targetScoreTimesKey)
         }
 
-        return times.firstIndex(where: { $0.time == time && $0.name == name.uppercased() }).map { $0 + 1 }
+        return times.firstIndex(where: { $0.date == newEntry.date && $0.name == newEntry.name }).map { $0 + 1 }
     }
 
     func clearTargetScoreTimes() {

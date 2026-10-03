@@ -1,9 +1,8 @@
 //
 //  GameViewController.swift
-//  DiveIntoSpriteKit
+//  MilliePlane
 //
-//  Created by Paul Hudson on 16/10/2017.
-//  Copyright © 2017 Paul Hudson. All rights reserved.
+//  Hosts the SpriteKit view and launches the title screen
 //
 
 import UIKit
@@ -33,11 +32,7 @@ class GameViewController: UIViewController {
     }
 
     override var supportedInterfaceOrientations: UIInterfaceOrientationMask {
-        if UIDevice.current.userInterfaceIdiom == .phone {
-            return .allButUpsideDown
-        } else {
-            return .all
-        }
+        return .landscape
     }
 
     override var prefersStatusBarHidden: Bool {

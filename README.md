@@ -15,7 +15,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Platform-iPadOS%2012.0+-lightgrey?style=flat-square&logo=apple" alt="Platform"/>
+  <img src="https://img.shields.io/badge/Platform-iPadOS%2015.0+-lightgrey?style=flat-square&logo=apple" alt="Platform"/>
   <img src="https://img.shields.io/badge/Swift-5.0-orange?style=flat-square&logo=swift" alt="Swift"/>
   <img src="https://img.shields.io/badge/Framework-SpriteKit-green?style=flat-square" alt="SpriteKit"/>
 </p>
@@ -24,6 +24,10 @@
 
 <p align="center">
   <em>"Dedicated to the best niece ever... Millie Payne"</em>
+</p>
+
+<p align="center">
+  <em>For Grandma Karen</em>
 </p>
 
 ---
@@ -46,7 +50,11 @@
 | **Retro Arcade Style** | 1980s-inspired title screen with twinkling stars |
 | **High Score Leaderboard** | Top 10 scores with arcade-style name entry |
 | **Millie Bucks** | Collect cash to rack up your score |
-| **Danger Zone Soundtrack** | Every great pilot needs a great soundtrack |
+| **Power-Ups** | Shield, Coin Magnet and 2X Multiplier |
+| **Golden Hearts** | Rare hearts for Grandma Karen, worth $5 bonus Millie Bucks |
+| **Rising Difficulty** | Clouds come faster every $10 you collect |
+| **Pause Anytime** | Tap the pause button (or leave the app) to take a break |
+| **Danger Zone Soundtrack** | Every great pilot needs a great soundtrack (toggle music & sound on the title screen) |
 
 ---
 
@@ -97,6 +105,10 @@ MilliePlane/
 ├── MenuScene.swift          # Title screen & high scores
 ├── GameOverScene.swift      # Game over & name entry
 ├── HighScoreManager.swift   # Score persistence
+├── GameMode.swift           # Endless & Target Score modes
+├── PowerUp.swift            # Shield, magnet & multiplier
+├── GoldenHeart.swift        # Golden hearts for Grandma Karen
+├── GameSettings.swift       # Music & sound preferences
 ├── GameScene.sks            # SpriteKit scene file
 ├── PlayerExplosion.sks      # Explosion particle effect
 └── Assets.xcassets/         # Images & app icons
@@ -106,8 +118,8 @@ MilliePlane/
 
 ## Requirements
 
-- iPadOS 12.0+
-- Xcode 14.0+ (for building from source)
+- iPadOS 15.0+
+- Xcode 26.0+ (for building from source)
 
 ---
 

@@ -20,6 +20,7 @@ class MenuScene: SKScene {
         setupHighScores()
         setupModeSelection()
         setupCredits()
+        setupSettingsToggles()
         setupDecorations()
     }
 
@@ -214,20 +215,84 @@ class MenuScene: SKScene {
 
     private func setupCredits() {
         let dedicationLabel = SKLabelNode(fontNamed: "AmericanTypewriter")
-        dedicationLabel.text = "Mille Plane is dedicated to the best niece ever... Millie Payne"
+        dedicationLabel.text = "Millie Plane is dedicated to the best niece ever... Millie Payne"
         dedicationLabel.fontSize = 18
         dedicationLabel.fontColor = SKColor(red: 1.0, green: 0.6, blue: 0.8, alpha: 1.0) // Pink
-        dedicationLabel.position = CGPoint(x: 0, y: -280)
+        dedicationLabel.position = CGPoint(x: 0, y: -268)
         dedicationLabel.zPosition = 10
         addChild(dedicationLabel)
+
+        // In loving memory - gently glows in and out
+        let grandmaLabel = SKLabelNode(fontNamed: "AmericanTypewriter-Bold")
+        grandmaLabel.text = "For Grandma Karen"
+        grandmaLabel.fontSize = 20
+        grandmaLabel.fontColor = SKColor(red: 0.85, green: 0.75, blue: 1.0, alpha: 1.0) // Soft lavender
+        grandmaLabel.position = CGPoint(x: 0, y: -298)
+        grandmaLabel.zPosition = 10
+        addChild(grandmaLabel)
+
+        let glow = SKAction.sequence([
+            SKAction.fadeAlpha(to: 0.6, duration: 2.0),
+            SKAction.fadeAlpha(to: 1.0, duration: 2.0)
+        ])
+        grandmaLabel.run(SKAction.repeatForever(glow))
 
         let creditsLabel = SKLabelNode(fontNamed: "AmericanTypewriter")
         creditsLabel.text = "© 2024 MILLIE PLANE"
         creditsLabel.fontSize = 16
         creditsLabel.fontColor = SKColor(red: 0.5, green: 0.5, blue: 0.5, alpha: 1.0)
-        creditsLabel.position = CGPoint(x: 0, y: -320)
+        creditsLabel.position = CGPoint(x: 0, y: -330)
         creditsLabel.zPosition = 10
         addChild(creditsLabel)
+    }
+
+    private func setupSettingsToggles() {
+        addChild(createToggle(name: "musicToggle", position: CGPoint(x: -410, y: -325)))
+        addChild(createToggle(name: "soundToggle", position: CGPoint(x: 410, y: -325)))
+        updateToggleLabels()
+    }
+
+    private func createToggle(name: String, position: CGPoint) -> SKNode {
+        let container = SKNode()
+        container.name = name
+        container.position = position
+        container.zPosition = 10
+
+        let background = SKShapeNode(rectOf: CGSize(width: 150, height: 44), cornerRadius: 8)
+        background.name = "background"
+        background.lineWidth = 2
+        container.addChild(background)
+
+        let label = SKLabelNode(fontNamed: "AmericanTypewriter-Bold")
+        label.name = "label"
+        label.zPosition = 1
+        label.fontSize = 16
+        label.verticalAlignmentMode = .center
+        container.addChild(label)
+
+        return container
+    }
+
+    private func updateToggleLabels() {
+        let toggles = [
+            ("musicToggle", "MUSIC", GameSettings.isMusicOn),
+            ("soundToggle", "SOUND", GameSettings.isSoundOn)
+        ]
+        let onColor = SKColor(red: 0.0, green: 1.0, blue: 1.0, alpha: 1.0)  // Cyan
+        let offColor = SKColor(red: 0.5, green: 0.5, blue: 0.5, alpha: 1.0)
+
+        for (name, title, isOn) in toggles {
+            guard let toggle = childNode(withName: name) else { continue }
+            let color = isOn ? onColor : offColor
+            if let label = toggle.childNode(withName: "label") as? SKLabelNode {
+                label.text = "\(title): \(isOn ? "ON" : "OFF")"
+                label.fontColor = color
+            }
+            if let background = toggle.childNode(withName: "background") as? SKShapeNode {
+                background.strokeColor = color
+                background.fillColor = color.withAlphaComponent(0.15)
+            }
+        }
     }
 
     private func setupDecorations() {
@@ -282,6 +347,14 @@ class MenuScene: SKScene {
                 return
             } else if node.name == "targetButton" || node.parent?.name == "targetButton" {
                 startGame(mode: .targetScore)
+                return
+            } else if node.name == "musicToggle" || node.parent?.name == "musicToggle" {
+                GameSettings.isMusicOn.toggle()
+                updateToggleLabels()
+                return
+            } else if node.name == "soundToggle" || node.parent?.name == "soundToggle" {
+                GameSettings.isSoundOn.toggle()
+                updateToggleLabels()
                 return
             }
         }

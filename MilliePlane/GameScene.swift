@@ -85,7 +85,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         }
 
         NotificationCenter.default.addObserver(self, selector: #selector(appWillResignActive),
-                                               name: UIApplication.willResignActiveNotification, object: nil)
+                                               name: UIScene.willDeactivateNotification, object: nil)
     }
 
     override func willMove(from view: SKView) {

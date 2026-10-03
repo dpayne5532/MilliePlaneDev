@@ -25,6 +25,7 @@
 		CCCC000A1F951D59001794D5 /* PowerUp.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCCC00091F951D59001794D5 /* PowerUp.swift */; };
 		CCCC000C1F951D59001794D5 /* GameSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCCC000B1F951D59001794D5 /* GameSettings.swift */; };
 		CCCC000E1F951D59001794D5 /* GoldenHeart.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCCC000D1F951D59001794D5 /* GoldenHeart.swift */; };
+		CCCC00101F951D59001794D5 /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCCC000F1F951D59001794D5 /* SceneDelegate.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -48,6 +49,7 @@
 		CCCC00091F951D59001794D5 /* PowerUp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PowerUp.swift; sourceTree = "<group>"; };
 		CCCC000B1F951D59001794D5 /* GameSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameSettings.swift; sourceTree = "<group>"; };
 		CCCC000D1F951D59001794D5 /* GoldenHeart.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoldenHeart.swift; sourceTree = "<group>"; };
+		CCCC000F1F951D59001794D5 /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -94,6 +96,7 @@
 				CCCC00091F951D59001794D5 /* PowerUp.swift */,
 				CCCC000B1F951D59001794D5 /* GameSettings.swift */,
 				CCCC000D1F951D59001794D5 /* GoldenHeart.swift */,
+				CCCC000F1F951D59001794D5 /* SceneDelegate.swift */,
 				51C6E4C51F951D59001794D5 /* GameViewController.swift */,
 				51C6E4C71F951D59001794D5 /* Main.storyboard */,
 				51C6E4CA1F951D59001794D5 /* Assets.xcassets */,
@@ -189,6 +192,7 @@
 				CCCC000A1F951D59001794D5 /* PowerUp.swift in Sources */,
 				CCCC000C1F951D59001794D5 /* GameSettings.swift in Sources */,
 				CCCC000E1F951D59001794D5 /* GoldenHeart.swift in Sources */,
+				CCCC00101F951D59001794D5 /* SceneDelegate.swift in Sources */,
 				51C6E4C61F951D59001794D5 /* GameViewController.swift in Sources */,
 				51C6E4BE1F951D59001794D5 /* AppDelegate.swift in Sources */,
 			);
